@@ -3,8 +3,22 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./db');
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
+const allowedOrigins = new Set([
+  process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+]);
+app.use(cors({ origin: (origin, cb) => cb(null, !origin || allowedOrigins.has(origin)) }));
 app.use(express.json());
+app.use((req, res, next) => {
+  if (['POST', 'PUT'].includes(req.method) &&
+      (!req.body || typeof req.body !== 'object' || Array.isArray(req.body))) {
+    return res.status(400).json({ message: 'Request body must be a JSON object' });
+  }
+  next();
+});
 
 const fields = ['title', 'description', 'research_area', 'faculty_name', 'department', 'required_skills', 'available_positions', 'application_deadline', 'status'];
 const selectFields = 'id, title, description, research_area, faculty_name, department, required_skills, available_positions, application_deadline, status, created_at, updated_at';

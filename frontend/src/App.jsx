@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
 const blank = {
   title: '', description: '', research_area: '', faculty_name: '',
   department: '', required_skills: '', available_positions: 1,
@@ -38,12 +38,17 @@ export default function App() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   async function loadOpportunities() {
+    setLoading(true);
+    setError('');
     try {
       setOpportunities(await request('/opportunities'));
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -67,6 +72,8 @@ export default function App() {
 
   async function viewDetails(id) {
     setError('');
+    setSelected(null);
+    setShowForm(false);
     try {
       setSelected(await request('/opportunities/' + id));
     } catch (err) {
@@ -155,19 +162,20 @@ export default function App() {
         <button className="primary" onClick={startNew}>+ Add opportunity</button>
       </header>
 
-      {message && <div className="message">{message}</div>}
+      {message && <div className="message" role="status">{message}</div>}
       {error && <div className="error" role="alert">{error}</div>}
 
       <section className="list-section">
         <div className="toolbar">
           <input value={search} onChange={event => setSearch(event.target.value)}
             placeholder="Search opportunities" aria-label="Search opportunities" />
-          <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
+          <select aria-label="Filter by status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
             <option>All</option><option>Open</option><option>Closed</option>
           </select>
         </div>
         <p className="count">Showing {shown.length} of {opportunities.length} opportunities</p>
-        {shown.length === 0 && <p className="empty">No opportunities to show.</p>}
+        {loading && <p className="empty" role="status">Loading opportunities...</p>}
+        {!loading && !error && shown.length === 0 && <p className="empty">No opportunities to show.</p>}
         {shown.map(item => (
           <article className="opportunity" key={item.id}>
             <div className="card-heading">
@@ -213,7 +221,7 @@ export default function App() {
           <form onSubmit={saveOpportunity}>
             {fields.map(([key, label]) => (
               <label key={key}>{label}
-                <input required value={form[key]} onChange={event => setForm({ ...form, [key]: event.target.value })} />
+                <input required maxLength={key === 'title' ? 200 : key === 'required_skills' ? undefined : 120} value={form[key]} onChange={event => setForm({ ...form, [key]: event.target.value })} />
               </label>
             ))}
             <label>Description
