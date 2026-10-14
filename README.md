@@ -1,6 +1,6 @@
 # Research Opportunity Portal
 
-Computer Networks — Assignment 1 (Fall 2026)
+Computer Networks Assignment 1
 
 This is a small website for keeping track of research positions offered by university faculty. I used React for the pages, Express for the API, and MySQL to keep the records. The frontend gets its data from the API; there are no preloaded opportunity records in the code.
 
